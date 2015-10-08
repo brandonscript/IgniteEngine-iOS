@@ -92,6 +92,7 @@ Pod::Spec.new do |s|
     s.dependency 'IQKeyboardManager','~>3.2'
     s.dependency 'JAFontAwesome','~>4.3'
     s.dependency 'jetfire','~>0.1'
+    s.dependency 'KontaktSDK', '~>6.2'
     s.dependency 'MMDrawerController','~>0.6'
     s.dependency 'Reachability','~>3.2'
     s.dependency 'SDWebImage','~>3.7'
