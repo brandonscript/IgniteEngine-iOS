@@ -139,11 +139,10 @@ IX_STATIC_CONST_STRING kIXFileAttachmentObjectNSCodingKey = @"fileAttachmentObje
 -(void)applySettings
 {
     [super applySettings];
-
+    
     [self setAutoLoad:[[self attributeContainer] getBoolValueForAttribute:kIXAutoLoad defaultValue:NO]];
-    NSString* url = [[self attributeContainer] getPathValueForAttribute:kIXUrl basePath:nil defaultValue:nil];
-    [self setUrl:url];
-    [self setPathIsLocal:[IXPathHandler pathIsLocal:url]];
+    [self setUrl:[[self attributeContainer] getPathValueForAttribute:kIXUrl basePath:nil defaultValue:nil]];
+    [self setPathIsLocal:[IXPathHandler pathIsLocal:self.url]];
     [self setUrlEncodeParams:[[self attributeContainer] getBoolValueForAttribute:kIXUrlEncodeParams defaultValue:YES]];
     [self setDeriveValueTypes:[[self attributeContainer] getBoolValueForAttribute:kIXDeriveValueTypes defaultValue:YES]];
     [self buildBody];
@@ -227,7 +226,7 @@ IX_STATIC_CONST_STRING kIXFileAttachmentObjectNSCodingKey = @"fileAttachmentObje
 
 -(void)fireLoadFinishedEvents:(BOOL)loadDidSucceed paginationKey:(NSString *)paginationKey
 {
-
+    
     IX_LOG_DEBUG(@"Datasource load %@: %@", (loadDidSucceed) ? kIX_SUCCESS : kIX_FAILED, self.url);
     
     [[self actionContainer] executeActionsForEventNamed:(loadDidSucceed) ? kIX_SUCCESS : kIX_FAILED];

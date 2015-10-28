@@ -50,9 +50,17 @@ IX_STATIC_CONST_STRING kIXOAuthRedirectURI = @"oauth.redirect_uri";
 IX_STATIC_CONST_STRING kIXOAuthScope = @"oauth.scope";
 IX_STATIC_CONST_STRING kIXOAuthResponseType = @"oauth.response_type";
 
+// IXOAUth2DataProvider INTERNAL Attributes
+IX_STATIC_CONST_STRING kIXOAuthClientIDInternal = @"client_id";
+IX_STATIC_CONST_STRING kIXOAuthSecretInternal = @"client_secret";
+// TODO: Additional grant_type support for password, implicit, client credentials
+IX_STATIC_CONST_STRING kIXOAuthGrantTypeInternal = @"grant_type"; // currently only authorization_code is supported
+IX_STATIC_CONST_STRING kIXOAuthRedirectURIInternal = @"redirect_uri";
+IX_STATIC_CONST_STRING kIXOAuthScopeInternal = @"scope";
+IX_STATIC_CONST_STRING kIXOAuthResponseTypeInternal = @"response_type";
+
 IX_STATIC_CONST_STRING kIXOAuthTokenStorageID = @"storageId"; // required - this param is used to identify stored credentials
 
-IX_STATIC_CONST_STRING kIXOAuthBaseUrl = @"baseUrl";
 IX_STATIC_CONST_STRING kIXOAuthAuthorizePath = @"pathSuffix.auth";
 IX_STATIC_CONST_STRING kIXOAuthAccessTokenPath = @"pathSuffix.token";
 
@@ -82,7 +90,6 @@ IX_STATIC_CONST_STRING kIXAuthFail = @"auth.fail";
 @property (nonatomic,strong) IXOAuthWebAuthViewController* oAuthWebAuthViewController;
 @property (nonatomic,strong) AFOAuthCredential* oAuthCredential;
 
-@property (nonatomic,copy) NSString* oAuthBaseUrl;
 @property (nonatomic,copy) NSString* oAuthClientID;
 @property (nonatomic,copy) NSString* oAuthClientSecret;
 @property (nonatomic,copy) NSString* oAuthTokenStorageID;
@@ -104,7 +111,8 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
 
 -(void)applySettings
 {
-    [self setOAuthBaseUrl:[[self attributeContainer] getStringValueForAttribute:kIXOAuthBaseUrl defaultValue:nil]];
+    [super applySettings];
+    
     [self setOAuthClientID:[[self attributeContainer] getStringValueForAttribute:kIXOAuthClientID defaultValue:nil]];
     [self setOAuthClientSecret:[[self attributeContainer] getStringValueForAttribute:kIXOAuthSecret defaultValue:nil]];
     [self setOAuthTokenStorageID:[[self attributeContainer] getStringValueForAttribute:kIXOAuthTokenStorageID defaultValue:nil]];
@@ -114,33 +122,6 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
     [self setOAuthScope:[[self attributeContainer] getStringValueForAttribute:kIXOAuthScope defaultValue:nil]];
     [self setOAuthRedirectURI:[[self attributeContainer] getStringValueForAttribute:kIXOAuthRedirectURI defaultValue:kIX_Default_RedirectURI]];
     [self setOAuthResponseType:[[self attributeContainer] getStringValueForAttribute:kIXOAuthResponseType defaultValue:kIXOAuthResponseTypeCode]];
-
-    [super applySettings];
-}
-
--(void)createRequest
-{
-    self.url = self.oAuthBaseUrl;
-
-//    BOOL needsToCreateClient = ([self httpClient] == nil || ![[self httpClient] isKindOfClass:[AFOAuth2Client class]]);
-//    if( !needsToCreateClient )
-//    {
-//        AFOAuth2Client* oauthClient = (AFOAuth2Client*)[self httpClient];
-//        needsToCreateClient = ( ![[oauthClient serviceProviderIdentifier] isEqualToString:[baseURL host]] || ![[oauthClient clientID] isEqualToString:[self oAuthClientID]] || ![[oauthClient secret] isEqualToString:[self oAuthSecret]] );
-//    }
-//    
-//    if( needsToCreateClient )
-//    {
-//        AFOAuth2Client* oauth2Client = [AFOAuth2Client clientWithBaseURL:baseURL clientID:[self oAuthClientID] secret:[self oAuthSecret]];
-//        [self setHttpClient:oauth2Client];
-//    }
-    
-    
-    
-}
-
--(NSString*)url {
-    return self.oAuthBaseUrl;
 }
 
 -(void)applyFunction:(NSString *)functionName withParameters:(IXAttributeContainer *)parameterContainer
@@ -175,14 +156,14 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
 
 -(NSString*)webViewTokenURL
 {
-    NSString* accessCodeURLString = [_oAuthBaseUrl stringByAppendingPathComponent:_oAuthAuthorizePath];
+    NSString* accessCodeURLString = [self.url stringByAppendingPathComponent:_oAuthAuthorizePath];
     
-    NSMutableDictionary* params = [self.queryParams mutableCopy];
-    params[kIXOAuthResponseType] = _oAuthResponseType;
-    params[kIXOAuthClientID] = _oAuthClientID;
-    params[kIXOAuthScope] = _oAuthScope;
-    params[kIXOAuthGrantType] = _oAuthGrantType;
-    params[kIXOAuthRedirectURI] = _oAuthRedirectURI;
+    NSMutableDictionary* params = [self.queryParams mutableCopy] ?: [NSMutableDictionary new];
+    params[kIXOAuthResponseTypeInternal] = _oAuthResponseType;
+    params[kIXOAuthClientIDInternal] = _oAuthClientID;
+    params[kIXOAuthScopeInternal] = _oAuthScope;
+    params[kIXOAuthGrantTypeInternal] = _oAuthGrantType;
+    params[kIXOAuthRedirectURIInternal] = _oAuthRedirectURI;
     
     return [accessCodeURLString stringByAppendingString:[NSDictionary ix_urlEncodedQueryParamsStringFromDictionary:params]];
 }
@@ -191,73 +172,70 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
 {
     [super loadData:forceGet];
     
-    if( ![self isPathLocal] )
+    if (!_OAuth2Manager) {
+        _OAuth2Manager = [[AFOAuth2Manager alloc] initWithBaseURL:[NSURL URLWithString:self.url]
+                                                         clientID:_oAuthClientID
+                                                           secret:_oAuthClientSecret];
+    }
+    
+    BOOL foundValidStoredCredential = NO;
+    NSString* storageID = [self oAuthTokenStorageID];
+    if( [storageID length] > 0 )
     {
-        if (!_OAuth2Manager) {
-            _OAuth2Manager = [[AFOAuth2Manager alloc] initWithBaseURL:[NSURL URLWithString:self.oAuthBaseUrl]
-                                                             clientID:_oAuthClientID
-                                                               secret:_oAuthClientSecret];
-        }
-        
-        BOOL foundValidStoredCredential = NO;
-        NSString* storageID = [self oAuthTokenStorageID];
-        if( [storageID length] > 0 )
+        AFOAuthCredential* storedCredential = [AFOAuthCredential retrieveCredentialWithIdentifier:storageID];
+        if( storedCredential )
         {
-            AFOAuthCredential* storedCredential = [AFOAuthCredential retrieveCredentialWithIdentifier:storageID];
-            if( storedCredential )
+            if( [storedCredential isExpired] )
             {
-                if( [storedCredential isExpired] )
-                {
-                    __weak typeof(self) weakSelf = self;
-                    
-                    [_OAuth2Manager authenticateUsingOAuthWithURLString:_oAuthAccessTokenPath
-                                                          refreshToken:storedCredential.refreshToken
-                                                               success:^(AFOAuthCredential *credential) {
-                                                                   IX_LOG_VERBOSE(@"%@: Did refresh access token for datasource with ID: %@ \natoken: %@",THIS_FILE,[weakSelf ID],[credential accessToken]);
-                                                                   if( [storageID length] > 0 )
-                                                                   {
-                                                                       [AFOAuthCredential storeCredential:credential withIdentifier:storageID];
-                                                                   }
-                                                                   [[weakSelf actionContainer] executeActionsForEventNamed:kIXAuthSuccess];
-                                                                   [weakSelf fireLoadFinishedEvents:YES];
-
-                                                               } failure:^(NSError *error) {
-                                                                   [AFOAuthCredential deleteCredentialWithIdentifier:storageID];
-                                                                   [weakSelf loadData:YES];
-                                                               }];
-                    return;
-                }
-                else
-                {
-                    foundValidStoredCredential = YES;
-                    [self setOAuthCredential:storedCredential];
-                    
-                    [[IXAFHTTPSessionManager sharedManager].requestSerializer setAuthorizationHeaderFieldWithCredential:storedCredential];
-                    
-                    [[self actionContainer] executeActionsForEventNamed:kIXAuthSuccess];
-                    [self fireLoadFinishedEvents:YES];
-                }
+                __weak typeof(self) weakSelf = self;
+                
+                [_OAuth2Manager authenticateUsingOAuthWithURLString:_oAuthAccessTokenPath
+                                                       refreshToken:storedCredential.refreshToken
+                                                            success:^(AFOAuthCredential *credential) {
+                                                                IX_LOG_VERBOSE(@"%@: Did refresh access token for datasource with ID: %@ \natoken: %@",THIS_FILE,[weakSelf ID],[credential accessToken]);
+                                                                if( [storageID length] > 0 )
+                                                                {
+                                                                    [AFOAuthCredential storeCredential:credential withIdentifier:storageID];
+                                                                }
+                                                                [[weakSelf actionContainer] executeActionsForEventNamed:kIXAuthSuccess];
+                                                                [weakSelf fireLoadFinishedEvents:YES];
+                                                                
+                                                            } failure:^(NSError *error) {
+                                                                [AFOAuthCredential deleteCredentialWithIdentifier:storageID];
+                                                                [weakSelf loadData:YES];
+                                                            }];
+                return;
+            }
+            else
+            {
+                foundValidStoredCredential = YES;
+                [self setOAuthCredential:storedCredential];
+                
+                [[IXAFHTTPSessionManager sharedManager].requestSerializer setAuthorizationHeaderFieldWithCredential:storedCredential];
+                
+                [[self actionContainer] executeActionsForEventNamed:kIXAuthSuccess];
+                [self fireLoadFinishedEvents:YES];
             }
         }
+    }
+    
+    if( !foundValidStoredCredential && [self oAuthWebAuthViewController] == nil )
+    {
+        NSString* accessCodeURLString = [self webViewTokenURL];
+        NSURL* accessCodeURL = [NSURL URLWithString:accessCodeURLString];
+        NSURL* redirectURI = [NSURL URLWithString:[self oAuthRedirectURI]];
         
-        if( !foundValidStoredCredential && [self oAuthWebAuthViewController] == nil )
+        IXOAuthWebAuthViewController* oauthWebAuthViewController = [[IXOAuthWebAuthViewController alloc] initWithDelegate:self
+                                                                                                            accessCodeURL:accessCodeURL
+                                                                                                              redirectURI:redirectURI];
+        if( [UIViewController isOkToPresentViewController:oauthWebAuthViewController] )
         {
-            NSString* accessCodeURLString = [self webViewTokenURL];
-            NSURL* accessCodeURL = [NSURL URLWithString:accessCodeURLString];
-            NSURL* redirectURI = [NSURL URLWithString:[self oAuthRedirectURI]];
-            
-            IXOAuthWebAuthViewController* oauthWebAuthViewController = [[IXOAuthWebAuthViewController alloc] initWithDelegate:self
-                                                                                                                accessCodeURL:accessCodeURL
-                                                                                                                  redirectURI:redirectURI];
-            if( [UIViewController isOkToPresentViewController:oauthWebAuthViewController] )
-            {
-                [self setOAuthWebAuthViewController:oauthWebAuthViewController];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [[[IXAppManager sharedAppManager] rootViewController] presentViewController:[self oAuthWebAuthViewController]
-                                                                                       animated:YES
-                                                                                     completion:nil];
-                });
-            }
+            [self setOAuthWebAuthViewController:oauthWebAuthViewController];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[[IXAppManager sharedAppManager] rootViewController] presentViewController:[self oAuthWebAuthViewController]
+                                                                                   animated:YES
+                                                                                 completion:nil];
+            });
         }
     }
 }
@@ -287,17 +265,17 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
         [credential setRefreshToken:refreshToken expiration:expires];
     }
     [self setOAuthCredential:credential];
-
+    
     IX_LOG_VERBOSE(@"%@: Did recieve access token for datasource with ID: %@ \ntoken: %@",THIS_FILE,[self ID],[credential accessToken]);
-
+    
     if( [[self oAuthTokenStorageID] length] > 0 )
     {
         [AFOAuthCredential storeCredential:credential withIdentifier:[self oAuthTokenStorageID]];
     }
-
+    
     [[self actionContainer] executeActionsForEventNamed:kIXAuthSuccess];
     [self fireLoadFinishedEvents:YES];
-
+    
     if( [UIViewController isOkToDismissViewController:oAuthWebAuthViewController] )
     {
         [self setOAuthWebAuthViewController:nil];
@@ -310,7 +288,7 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
 {
     
     if (!_OAuth2Manager) {
-        _OAuth2Manager = [[AFOAuth2Manager alloc] initWithBaseURL:[NSURL URLWithString:self.oAuthBaseUrl]
+        _OAuth2Manager = [[AFOAuth2Manager alloc] initWithBaseURL:[NSURL URLWithString:self.url]
                                                          clientID:_oAuthClientID
                                                            secret:_oAuthClientSecret];
     }

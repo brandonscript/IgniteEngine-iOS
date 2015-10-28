@@ -54,11 +54,10 @@ static NSString *urlEncode(id object) {
 
 +(NSString*)ix_urlEncodedQueryParamsStringFromDictionary:(NSDictionary*)dictionary {
     NSMutableArray *parts = [NSMutableArray array];
-    for (id key in self) {
-        id value = [dictionary objectForKey:key];
+    [dictionary enumerateKeysAndObjectsUsingBlock:^(NSString* key, NSString* value, BOOL* stop) {
         NSString *part = [NSString stringWithFormat: @"%@=%@", urlEncode(key), urlEncode(value)];
         [parts addObject: part];
-    }
+    }];
     return [parts componentsJoinedByString: @"&"];
 }
 
