@@ -53,8 +53,8 @@ IX_STATIC_CONST_STRING kIXOAuthResponseType = @"oauth.response_type";
 
 IX_STATIC_CONST_STRING kIXOAuthTokenStorageID = @"storageId"; // required - this param is used to identify stored credentials
 
-IX_STATIC_CONST_STRING kIXOAuthAuthorizePath = @"pathSuffix.auth";
-IX_STATIC_CONST_STRING kIXOAuthAccessTokenPath = @"pathSuffix.token";
+IX_STATIC_CONST_STRING kIXOAuthAuthorizePath = @"webViewPath";
+IX_STATIC_CONST_STRING kIXOAuthAccessTokenPath = @"tokenPath";
 
 // IXOAuth2DataProvider Attribute Accepted Values
 IX_STATIC_CONST_STRING kIXOAuthGrantTypeAuthorizationCode = @"authorization_code"; // currently only authorization_code is supported
@@ -165,7 +165,7 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
     params[kIXOAuthGrantTypeKey] = _oAuthGrantType;
     params[kIXOAuthRedirectURIKey] = _oAuthRedirectURI;
     
-    return [accessCodeURLString stringByAppendingString:[NSDictionary ix_urlEncodedQueryParamsStringFromDictionary:params]];
+    return [NSString stringWithFormat:@"%@?%@", accessCodeURLString, [NSDictionary ix_urlEncodedQueryParamsStringFromDictionary:params]];
 }
 
 -(void)loadData:(BOOL)forceGet
