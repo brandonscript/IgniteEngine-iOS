@@ -50,14 +50,6 @@ IX_STATIC_CONST_STRING kIXOAuthRedirectURI = @"oauth.redirect_uri";
 IX_STATIC_CONST_STRING kIXOAuthScope = @"oauth.scope";
 IX_STATIC_CONST_STRING kIXOAuthResponseType = @"oauth.response_type";
 
-// IXOAUth2DataProvider INTERNAL Attributes
-IX_STATIC_CONST_STRING kIXOAuthClientIDInternal = @"client_id";
-IX_STATIC_CONST_STRING kIXOAuthSecretInternal = @"client_secret";
-// TODO: Additional grant_type support for password, implicit, client credentials
-IX_STATIC_CONST_STRING kIXOAuthGrantTypeInternal = @"grant_type"; // currently only authorization_code is supported
-IX_STATIC_CONST_STRING kIXOAuthRedirectURIInternal = @"redirect_uri";
-IX_STATIC_CONST_STRING kIXOAuthScopeInternal = @"scope";
-IX_STATIC_CONST_STRING kIXOAuthResponseTypeInternal = @"response_type";
 
 IX_STATIC_CONST_STRING kIXOAuthTokenStorageID = @"storageId"; // required - this param is used to identify stored credentials
 
@@ -77,6 +69,14 @@ IX_STATIC_CONST_STRING kIXClearAccessToken = @"destroyToken"; // kIXOAuthTokenSt
 // IXOAuth2DataProvider Events
 IX_STATIC_CONST_STRING kIXAuthSuccess = @"auth.success";
 IX_STATIC_CONST_STRING kIXAuthFail = @"auth.fail";
+
+// IXOAUth2DataProvider Key Properties
+IX_STATIC_CONST_STRING kIXOAuthClientIDKey = @"client_id";
+IX_STATIC_CONST_STRING kIXOAuthSecretKey = @"client_secret";
+IX_STATIC_CONST_STRING kIXOAuthGrantTypeKey = @"grant_type";
+IX_STATIC_CONST_STRING kIXOAuthRedirectURIKey = @"redirect_uri";
+IX_STATIC_CONST_STRING kIXOAuthScopeKey = @"scope";
+IX_STATIC_CONST_STRING kIXOAuthResponseTypeKey = @"response_type";
 
 @interface AFOAuth2Manager ()
 @property (readwrite, nonatomic) NSString *serviceProviderIdentifier;
@@ -159,11 +159,11 @@ IX_STATIC_CONST_STRING kIX_Default_RedirectURI = @"ix://callback:oauth";
     NSString* accessCodeURLString = [self.url stringByAppendingPathComponent:_oAuthAuthorizePath];
     
     NSMutableDictionary* params = [self.queryParams mutableCopy] ?: [NSMutableDictionary new];
-    params[kIXOAuthResponseTypeInternal] = _oAuthResponseType;
-    params[kIXOAuthClientIDInternal] = _oAuthClientID;
-    params[kIXOAuthScopeInternal] = _oAuthScope;
-    params[kIXOAuthGrantTypeInternal] = _oAuthGrantType;
-    params[kIXOAuthRedirectURIInternal] = _oAuthRedirectURI;
+    params[kIXOAuthResponseTypeKey] = _oAuthResponseType;
+    params[kIXOAuthClientIDKey] = _oAuthClientID;
+    params[kIXOAuthScopeKey] = _oAuthScope;
+    params[kIXOAuthGrantTypeKey] = _oAuthGrantType;
+    params[kIXOAuthRedirectURIKey] = _oAuthRedirectURI;
     
     return [accessCodeURLString stringByAppendingString:[NSDictionary ix_urlEncodedQueryParamsStringFromDictionary:params]];
 }
