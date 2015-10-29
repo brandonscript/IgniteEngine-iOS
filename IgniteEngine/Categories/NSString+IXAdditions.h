@@ -31,6 +31,7 @@
 
 +(NSString*)ix_stringFromBOOL:(BOOL)boolean;
 +(NSString*)ix_stringFromFloat:(float)floatValue;
++(NSString*)ix_roundString:(NSString*)string decimalPlaces:(NSInteger)decimalPlaces;
 +(NSString*)ix_truncateString:(NSString*)string toIndex:(NSInteger)index;
 +(NSString*)ix_monogramString:(NSString*)string ifLengthIsGreaterThan:(NSInteger)length;
 +(NSString*)ix_formatDateString:(NSString *)string fromDateFormat:(NSString*)fromDateFormat toDateFormat:(NSString*)toDateFormat;
