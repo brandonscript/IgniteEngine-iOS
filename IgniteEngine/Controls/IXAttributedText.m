@@ -116,7 +116,6 @@ IX_STATIC_CONST_STRING kIXPrefixTouchUp = @"touchUp"; // prefixes the event
 -(void)layoutControlContentsInRect:(CGRect)rect
 {
     [self.label setFrame:rect];
-    [self.label sizeToFit];
 }
 
 -(CGSize)preferredSizeForSuggestedSize:(CGSize)size
