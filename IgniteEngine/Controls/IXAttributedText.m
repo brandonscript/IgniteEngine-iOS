@@ -120,7 +120,8 @@ IX_STATIC_CONST_STRING kIXPrefixTouchUp = @"touchUp"; // prefixes the event
 
 -(CGSize)preferredSizeForSuggestedSize:(CGSize)size
 {
-    return [self.label sizeThatFits:size];
+    CGSize sizeThatFits = [self.label sizeThatFits:size];
+    return CGSizeMake(ceilf(sizeThatFits.width), ceilf(sizeThatFits.height));
 }
 
 //Event handler
